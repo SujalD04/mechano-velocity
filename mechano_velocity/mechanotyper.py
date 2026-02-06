@@ -44,6 +44,7 @@ class Mechanotyper:
         # Store intermediate results
         self.raw_density: Optional[np.ndarray] = None
         self.resistance: Optional[np.ndarray] = None
+        self.sigmoid_center: Optional[float] = None
         self.gene_contributions: Dict[str, np.ndarray] = {}
         
     def calculate_resistance(
@@ -224,23 +225,31 @@ class Mechanotyper:
         
         return smoothed
     
-    def _normalize_resistance(self, density: np.ndarray) -> np.ndarray:
+    def _normalize_resistance(
+        self, 
+        density: np.ndarray,
+        mu: Optional[float] = None
+    ) -> np.ndarray:
         """
         Normalize raw density to resistance probability [0, 1].
         
         Uses sigmoid function: R = 1 / (1 + exp(-(D - μ)))
         """
         # Calculate or use provided center
-        if self.params.sigmoid_center is None:
-            mu = np.mean(density)
+        if mu is not None:
+            center = mu
+        elif self.params.sigmoid_center is None:
+            center = np.mean(density)
+            self.sigmoid_center = center  # Store for later simulations
         else:
-            mu = self.params.sigmoid_center
-        
+            center = self.params.sigmoid_center
+            self.sigmoid_center = center
+
         # Apply sigmoid
         # expit is the scipy name for sigmoid: 1 / (1 + exp(-x))
-        resistance = expit(density - mu)
+        resistance = expit(density - center)
         
-        print(f"   Sigmoid center (μ): {mu:.2f}")
+        print(f"   Sigmoid center (μ): {center:.2f}")
         print(f"   Resistance range: [{resistance.min():.3f}, {resistance.max():.3f}]")
         
         return resistance
@@ -332,7 +341,14 @@ class Mechanotyper:
             mmp = mmp * reduction_factor
         
         sim_density = self._calculate_raw_density(collagen, lox, mmp)
-        sim_resistance = self._normalize_resistance(sim_density)
+        
+        # KEY FIX: Use the ORIGINAL sigmoid center (mu) for normalization
+        # This ensures we see the drop relative to the original baseline
+        # Otherwise, the sigmoid re-centers and masks the drug effect
+        sim_resistance = self._normalize_resistance(
+            sim_density, 
+            mu=self.sigmoid_center
+        )
         
         # Compare
         print(f"\nOriginal mean resistance: {self.resistance.mean():.3f}")

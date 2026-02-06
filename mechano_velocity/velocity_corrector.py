@@ -198,7 +198,12 @@ class VelocityCorrector:
             # Weighted average
             weight_sum = weights.sum()
             if weight_sum > 0:
-                corrected[i] = np.average(directions, weights=weights, axis=0)
+                # KEY FIX: Scale by local permeability (mean weight)
+                # Previously, np.average normalized by sum(weights), so low-weight (high resistance)
+                # areas still had high velocity. Now we scale by the effective "openness".
+                permeability = weights.mean()
+                base_vec = np.average(directions, weights=weights, axis=0)
+                corrected[i] = base_vec * permeability
         
         return corrected
     
