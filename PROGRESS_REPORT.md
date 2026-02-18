@@ -163,7 +163,78 @@ Resistance values are compared against the Leiden clusters from Notebook 01. Thi
 
 ---
 
-## 5. What Comes Next (Not Yet Presented)
+## 5. Dataset File Structure
+
+The raw data lives in `data/V1_Breast_Cancer_Block_A/` and follows the standard **10x Genomics Visium** output format. Here's what each file is:
+
+```
+data/V1_Breast_Cancer_Block_A/
+├── filtered_feature_bc_matrix.h5      ← The gene expression data
+└── spatial/
+    ├── aligned_fiducials.jpg          ← Alignment reference image
+    ├── detected_tissue_image.jpg      ← Tissue detection mask
+    ├── scalefactors_json.json         ← Coordinate scaling factors
+    ├── tissue_hires_image.png         ← High-resolution H&E photo
+    ├── tissue_lowres_image.png        ← Low-resolution H&E photo
+    └── tissue_positions_list.csv      ← Spot coordinates on the slide
+```
+
+### 5.1 Gene Expression — `filtered_feature_bc_matrix.h5`
+
+This is the **main data file** in HDF5 format. It contains a sparse matrix of:
+- **Rows:** ~3,800 tissue spots (barcoded capture locations on the slide)
+- **Columns:** ~36,000 genes
+- **Values:** UMI counts — how many RNA molecules of each gene were captured at each spot
+
+Each spot is identified by a unique **barcode** (e.g., `ACGCCTGACACGCGCT-1`). The "filtered" means 10x's software has already removed empty spots (areas with no tissue).
+
+### 5.2 Spatial Images
+
+| File | What It Is |
+|---|---|
+| **`tissue_hires_image.png`** | High-resolution photo of the H&E-stained tissue slice, taken under a microscope. This is what pathologists look at — pink areas = collagen/eosin, purple areas = cell nuclei. Used for overlaying our resistance map on top of actual tissue. |
+| **`tissue_lowres_image.png`** | Same image at lower resolution. Used for faster rendering when high detail isn't needed (e.g., thumbnail views). |
+| **`detected_tissue_image.jpg`** | Binary mask showing which areas of the slide contain actual tissue vs. empty background. The 10x pipeline uses this to decide which spots to keep. |
+| **`aligned_fiducials.jpg`** | Image showing the **fiducial markers** — the small circular alignment dots printed on the Visium slide. These are used to precisely align the microscopy image with the spot grid, so each barcode maps to the correct physical location. |
+
+### 5.3 Coordinate System — `scalefactors_json.json`
+
+Contains scaling factors to convert between different coordinate systems:
+
+```json
+{
+    "spot_diameter_fullres": 177.48,
+    "tissue_hires_scalef": 0.0825,
+    "fiducial_diameter_fullres": 286.70,
+    "tissue_lowres_scalef": 0.0248
+}
+```
+
+| Factor | Meaning |
+|---|---|
+| **`spot_diameter_fullres`** | Diameter of each capture spot in full-resolution image pixels (~177 px). Each spot captures RNA from a ~55μm circle of tissue. |
+| **`tissue_hires_scalef`** | Multiply full-res coordinates by this to get hires image coordinates (the hires image is ~8.25% of original size). |
+| **`tissue_lowres_scalef`** | Same for lowres image (~2.48% of original). |
+| **`fiducial_diameter_fullres`** | Diameter of alignment dots in full-res pixels. Used internally for image registration. |
+
+### 5.4 Spot Positions — `tissue_positions_list.csv`
+
+A CSV file with **4,992 rows** (one per potential spot on the slide). Each row contains:
+
+| Column | Example | Meaning |
+|---|---|---|
+| Barcode | `ACGCCTGACACGCGCT-1` | Unique spot identifier (matches the expression matrix) |
+| In Tissue | `1` or `0` | Whether this spot is under actual tissue (1) or empty slide (0) |
+| Array Row | `0` | Row position in the Visium array grid |
+| Array Col | `0` | Column position in the Visium array grid |
+| Pixel Row | `4034` | Y-coordinate in the full-resolution image |
+| Pixel Col | `3524` | X-coordinate in the full-resolution image |
+
+Only spots with `in_tissue = 1` are used in our analysis. This file is what links each barcode's gene expression to its **physical location** on the tissue — the foundation of spatial transcriptomics.
+
+---
+
+## 6. What Comes Next (Not Yet Presented)
 
 | Stage | Notebook | Description |
 |---|---|---|
@@ -172,7 +243,7 @@ Resistance values are compared against the Leiden clusters from Notebook 01. Thi
 
 ---
 
-## 6. Code Architecture
+## 7. Code Architecture
 
 The project is built as a modular Python package (`mechano_velocity/`) with 10 modules:
 
@@ -191,7 +262,7 @@ The project is built as a modular Python package (`mechano_velocity/`) with 10 m
 
 ---
 
-## 7. Key Libraries & Dependencies
+## 8. Key Libraries & Dependencies
 
 | Library | Purpose |
 |---|---|
