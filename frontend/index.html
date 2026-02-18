@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mechano-Velocity — Physics-Informed Cell Migration</title>
+    <meta name="description" content="Physics-Informed Graph Neural Network for Correcting Cell Migration Predictions in Spatial Transcriptomics" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+
+    <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+    <!-- ==================== NAVIGATION ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">🧬</span>
+            <span class="nav-title">Mechano-Velocity</span>
+        </div>
+        <div class="nav-links">
+            <a href="#hero" class="nav-link active">Home</a>
+            <a href="#problem" class="nav-link">Problem</a>
+            <a href="#pipeline" class="nav-link">Pipeline</a>
+            <a href="#preprocessing" class="nav-link">Preprocessing</a>
+            <a href="#mechanotyping" class="nav-link">Mechanotyping</a>
+            <a href="#dataset" class="nav-link">Dataset</a>
+            <a href="#architecture" class="nav-link">Architecture</a>
+        </div>
+    </nav>
+
+    <!-- ==================== HERO ==================== -->
+    <section class="hero" id="hero">
+        <div class="hero-bg">
+            <div class="hero-orb hero-orb-1"></div>
+            <div class="hero-orb hero-orb-2"></div>
+            <div class="hero-orb hero-orb-3"></div>
+            <div class="hero-grid"></div>
+        </div>
+        <div class="hero-content animate-in">
+            <div class="hero-badge">TARP Research Project</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">Mechano-Velocity</span>
+            </h1>
+            <p class="hero-subtitle">Physics-Informed Graph Neural Network for Correcting Cell Migration Predictions in Spatial Transcriptomics</p>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <span class="stat-value">4,992</span>
+                    <span class="stat-label">Tissue Spots</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">36K+</span>
+                    <span class="stat-label">Genes Profiled</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">50%</span>
+                    <span class="stat-label">Implemented</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">10</span>
+                    <span class="stat-label">Python Modules</span>
+                </div>
+            </div>
+            <a href="#problem" class="hero-cta">
+                Explore the Research
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- ==================== PROBLEM STATEMENT ==================== -->
+    <section class="section" id="problem">
+        <div class="container">
+            <div class="section-header animate-in">
+                <span class="section-tag">The Challenge</span>
+                <h2 class="section-title">Why Current Models <span class="gradient-text">Fail</span></h2>
+                <p class="section-desc">RNA velocity models predict cell movement based on gene expression kinetics — but they ignore the physical tissue landscape.</p>
+            </div>
+
+            <div class="comparison-grid animate-in">
+                <div class="comparison-card problem-card">
+                    <div class="comparison-icon">❌</div>
+                    <h3>What scVelo Assumes</h3>
+                    <div class="comparison-visual">
+                        <div class="cell-visual">
+                            <div class="cell cell-moving">🔵</div>
+                            <div class="arrow-right">→ → →</div>
+                            <div class="empty-space">Empty Space</div>
+                        </div>
+                    </div>
+                    <p>"If a cell expresses migration genes, it <strong>must be moving</strong>."</p>
+                    <ul class="comparison-list">
+                        <li>Treats tissue as empty space</li>
+                        <li>Only considers RNA splicing kinetics</li>
+                        <li>Produces <span class="text-red">false-positive</span> migration predictions</li>
+                    </ul>
+                </div>
+
+                <div class="comparison-card solution-card">
+                    <div class="comparison-icon">✅</div>
+                    <h3>Physical Reality</h3>
+                    <div class="comparison-visual">
+                        <div class="cell-visual">
+                            <div class="cell cell-blocked">🔵</div>
+                            <div class="wall-block">🧱🧱🧱</div>
+                            <div class="wall-label">Collagen Wall</div>
+                        </div>
+                    </div>
+                    <p>"Dense collagen walls <strong>physically block</strong> cell movement."</p>
+                    <ul class="comparison-list">
+                        <li>Tumors contain <strong>desmoplastic stroma</strong> (scar tissue)</li>
+                        <li>Collagen fibers form impenetrable barriers</li>
+                        <li>Velocity should be <span class="text-green">zero in walls</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="solution-banner animate-in">
+                <div class="solution-icon">💡</div>
+                <div class="solution-text">
+                    <h3>Our Solution</h3>
+                    <p>Mechano-Velocity detects physical barriers using gene signatures, calculates a resistance field, and applies physics-based corrections to velocity predictions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PIPELINE ==================== -->
+    <section class="section section-dark" id="pipeline">
+        <div class="container">
+            <div class="section-header animate-in">
+                <span class="section-tag">Our Approach</span>
+                <h2 class="section-title">Implementation <span class="gradient-text">Pipeline</span></h2>
+                <p class="section-desc">A modular 4-stage pipeline from raw data to clinical predictions.</p>
+            </div>
+
+            <div class="pipeline-container animate-in">
+                <div class="pipeline-progress">
+                    <div class="pipeline-progress-fill" style="width: 50%"></div>
+                </div>
+                <div class="pipeline-label">50% Complete</div>
+
+                <div class="pipeline-stages">
+                    <div class="pipeline-stage completed">
+                        <div class="stage-number">01</div>
+                        <div class="stage-icon">🧹</div>
+                        <h3>Preprocessing</h3>
+                        <p>Data loading, QC filtering, normalization, PCA, clustering</p>
+                        <span class="stage-badge done">Complete</span>
+                    </div>
+
+                    <div class="pipeline-connector done"></div>
+
+                    <div class="pipeline-stage completed">
+                        <div class="stage-number">02</div>
+                        <div class="stage-icon">🧱</div>
+                        <h3>Mechanotyping</h3>
+                        <p>Resistance field calculation, drug simulation, validation</p>
+                        <span class="stage-badge done">Complete</span>
+                    </div>
+
+                    <div class="pipeline-connector"></div>
+
+                    <div class="pipeline-stage upcoming">
+                        <div class="stage-number">03</div>
+                        <div class="stage-icon">🌐</div>
+                        <h3>Graph Simulation</h3>
+                        <p>Spatial graph construction, velocity correction</p>
+                        <span class="stage-badge upcoming-badge">Upcoming</span>
+                    </div>
+
+                    <div class="pipeline-connector"></div>
+
+                    <div class="pipeline-stage upcoming">
+                        <div class="stage-number">04</div>
+                        <div class="stage-icon">🏥</div>
+                        <h3>Clinical Scoring</h3>
+                        <p>MTS calculation, risk classification, reports</p>
+                        <span class="stage-badge upcoming-badge">Upcoming</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PREPROCESSING ==================== -->
+    <section class="section" id="preprocessing">
+        <div class="container">
+            <div class="section-header animate-in">
+                <span class="section-tag">Notebook 01</span>
+                <h2 class="section-title"><span class="gradient-text">Preprocessing</span></h2>
+                <p class="section-desc">From raw 10x Visium data to a clean, normalized, clustered dataset.</p>
+            </div>
+
+            <div class="steps-grid animate-in">
+                <div class="step-card">
+                    <div class="step-num">1</div>
+                    <h4>Data Loading</h4>
+                    <p>Load the 10x Visium Breast Cancer dataset (H5 matrix + spatial coordinates) into an AnnData object via <code>scanpy</code>.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">2</div>
+                    <h4>Quality Control</h4>
+                    <p>Filter spots by total UMI counts, genes detected, and mitochondrial %. Remove dead cells and empty spots.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">3</div>
+                    <h4>Normalization</h4>
+                    <p>CPM normalization (scale to 10,000 counts per spot) + log1p transformation to compress dynamic range.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">4</div>
+                    <h4>Feature Selection</h4>
+                    <p>Select ~2,000 Highly Variable Genes (HVGs) from ~36,000 total. These capture biological signal while reducing noise.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">5</div>
+                    <h4>Dimensionality Reduction</h4>
+                    <p>PCA reduces 2,000 genes to ~50 principal components. Neighbor graph connects similar spots in expression space.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">6</div>
+                    <h4>Clustering</h4>
+                    <p>Leiden algorithm groups spots into biologically meaningful clusters. UMAP provides 2D visualization.</p>
+                </div>
+            </div>
+
+            <div class="charts-row animate-in">
+                <div class="chart-card">
+                    <h4>QC Metrics Distribution</h4>
+                    <canvas id="qcChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>Preprocessing Pipeline</h4>
+                    <div class="pipeline-mini">
+                        <div class="mini-step">
+                            <span class="mini-icon">📥</span>
+                            <span class="mini-label">Raw Data</span>
+                            <span class="mini-val">~3,800 spots × 36,000 genes</span>
+                        </div>
+                        <div class="mini-arrow">↓</div>
+                        <div class="mini-step">
+                            <span class="mini-icon">🔍</span>
+                            <span class="mini-label">QC Filter</span>
+                            <span class="mini-val">Remove low-quality spots</span>
+                        </div>
+                        <div class="mini-arrow">↓</div>
+                        <div class="mini-step">
+                            <span class="mini-icon">📊</span>
+                            <span class="mini-label">Normalize + Log</span>
+                            <span class="mini-val">CPM → log1p</span>
+                        </div>
+                        <div class="mini-arrow">↓</div>
+                        <div class="mini-step">
+                            <span class="mini-icon">🎯</span>
+                            <span class="mini-label">HVG + PCA</span>
+                            <span class="mini-val">2,000 genes → 50 PCs</span>
+                        </div>
+                        <div class="mini-arrow">↓</div>
+                        <div class="mini-step highlight-step">
+                            <span class="mini-icon">✅</span>
+                            <span class="mini-label">Clean Dataset</span>
+                            <span class="mini-val">Ready for mechanotyping</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== MECHANOTYPING ==================== -->
+    <section class="section section-dark" id="mechanotyping">
+        <div class="container">
+            <div class="section-header animate-in">
+                <span class="section-tag">Notebook 02 — Core Contribution</span>
+                <h2 class="section-title"><span class="gradient-text">Mechanotyping</span></h2>
+                <p class="section-desc">Calculating the ECM Resistance Field — where physical barriers exist in the tissue.</p>
+            </div>
+
+            <!-- Gene Signatures -->
+            <div class="gene-grid animate-in">
+                <div class="gene-card construction">
+                    <div class="gene-header">
+                        <span class="gene-emoji">🧱</span>
+                        <h4>Construction Team</h4>
+                        <span class="gene-role">Barrier Builders</span>
+                    </div>
+                    <div class="gene-list">
+                        <div class="gene-item">
+                            <span class="gene-name">COL1A1 / COL1A2</span>
+                            <span class="gene-desc">Collagen Type I — the structural bricks of the wall</span>
+                        </div>
+                        <div class="gene-item">
+                            <span class="gene-name">LOX</span>
+                            <span class="gene-desc">Lysyl Oxidase — cement that cross-links and hardens collagen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gene-card demolition">
+                    <div class="gene-header">
+                        <span class="gene-emoji">🔨</span>
+                        <h4>Demolition Team</h4>
+                        <span class="gene-role">Tunnel Borers</span>
+                    </div>
+                    <div class="gene-list">
+                        <div class="gene-item">
+                            <span class="gene-name">MMP9</span>
+                            <span class="gene-desc">Matrix Metalloproteinase — enzyme that degrades the wall</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gene-card travelers">
+                    <div class="gene-header">
+                        <span class="gene-emoji">🏃</span>
+                        <h4>Travelers</h4>
+                        <span class="gene-role">Mobile Agents</span>
+                    </div>
+                    <div class="gene-list">
+                        <div class="gene-item">
+                            <span class="gene-name">CD8A</span>
+                            <span class="gene-desc">T-cell marker — immune cells trying to infiltrate</span>
+                        </div>
+                        <div class="gene-item">
+                            <span class="gene-name">KRT18 / EPCAM</span>
+                            <span class="gene-desc">Tumor markers — cancer cells attempting to metastasize</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equations -->
+            <div class="equation-box animate-in">
+                <h3>The Physics Equations</h3>
+                <div class="equation-row">
+                    <div class="equation-card">
+                        <div class="equation-label">Raw Density Score</div>
+                        <div class="equation" id="eq-density"></div>
+                        <p class="equation-explain">Collagen builds the wall, LOX hardens it, MMP9 breaks it down.</p>
+                    </div>
+                    <div class="equation-card">
+                        <div class="equation-label">Normalized Resistance</div>
+                        <div class="equation" id="eq-sigmoid"></div>
+                        <p class="equation-explain">Sigmoid maps raw density to a probability [0, 1]. μ centers at the dataset mean.</p>
+                    </div>
+                </div>
+                <div class="param-grid">
+                    <div class="param-item">
+                        <span class="param-symbol">α</span>
+                        <span class="param-name">Collagen Weight</span>
+                        <span class="param-val">1.0</span>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-symbol">β</span>
+                        <span class="param-name">LOX Multiplier</span>
+                        <span class="param-val">0.5</span>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-symbol">γ</span>
+                        <span class="param-name">MMP Penalty</span>
+                        <span class="param-val">0.8</span>
+                    </div>
+                    <div class="param-item">
+                        <span class="param-symbol">μ</span>
+                        <span class="param-name">Sigmoid Center</span>
+                        <span class="param-val">Auto (mean)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resistance Distribution Chart -->
+            <div class="charts-row animate-in">
+                <div class="chart-card">
+                    <h4>Resistance Distribution</h4>
+                    <canvas id="resistanceChart"></canvas>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Fluid (R &lt; 0.35)</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:#6b7280"></span> Normal</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Wall (R &gt; 0.65)</span>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h4>🧪 Drug Simulation: LOX Inhibitor</h4>
+                    <canvas id="drugChart"></canvas>
+                    <div class="drug-summary">
+                        <div class="drug-stat">
+                            <span class="drug-label">Mean Resistance Drop</span>
+                            <span class="drug-value text-green">↓ Significant</span>
+                        </div>
+                        <div class="drug-stat">
+                            <span class="drug-label">Walls Dissolved</span>
+                            <span class="drug-value text-green">Multiple spots reclassified</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resistance Categories -->
+            <div class="categories-grid animate-in">
+                <div class="category-card wall-category">
+                    <div class="category-indicator"></div>
+                    <h4>Wall 🔴</h4>
+                    <p class="category-threshold">R &gt; 0.65</p>
+                    <p>Dense barrier — cells physically cannot pass through</p>
+                </div>
+                <div class="category-card normal-category">
+                    <div class="category-indicator"></div>
+                    <h4>Normal ⚪</h4>
+                    <p class="category-threshold">0.35 ≤ R ≤ 0.65</p>
+                    <p>Intermediate resistance — partial hindrance</p>
+                </div>
+                <div class="category-card fluid-category">
+                    <div class="category-indicator"></div>
+                    <h4>Fluid 🔵</h4>
+                    <p class="category-threshold">R &lt; 0.35</p>
+                    <p>Open space — cells move freely</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== DATASET ==================== -->
+    <section class="section" id="dataset">
+        <div class="container">
+            <div class="section-header animate-in">
+                <span class="section-tag">Data Foundation</span>
+                <h2 class="section-title">Dataset <span class="gradient-text">Explorer</span></h2>
+                <p class="section-desc">10x Genomics Visium — Human Breast Cancer, Block A Section 1 (Invasive Ductal Carcinoma)</p>
+            </div>
+
+            <div class="dataset-grid animate-in">
+                <div class="file-tree-card">
+                    <h4>📁 File Structure</h4>
+                    <div class="file-tree">
+                        <div class="tree-item tree-dir">
+                            <span class="tree-icon">📂</span>
+                            <span>data/V1_Breast_Cancer_Block_A/</span>
+                        </div>
+                        <div class="tree-item tree-file" data-info="h5">
+                            <span class="tree-icon">📊</span>
+                            <span>filtered_feature_bc_matrix.h5</span>
+                            <span class="tree-badge">Main Data</span>
+                        </div>
+                        <div class="tree-item tree-dir tree-indent">
+                            <span class="tree-icon">📂</span>
+                            <span>spatial/</span>
+                        </div>
+                        <div class="tree-item tree-file tree-indent-2">
+                            <span class="tree-icon">🖼️</span>
+                            <span>tissue_hires_image.png</span>
+                        </div>
+                        <div class="tree-item tree-file tree-indent-2">
+                            <span class="tree-icon">🖼️</span>
+                            <span>tissue_lowres_image.png</span>
+                        </div>
+                        <div class="tree-item tree-file tree-indent-2">
+                            <span class="tree-icon">📍</span>
+                            <span>aligned_fiducials.jpg</span>
+                        </div>
+                        <div class="tree-item tree-file tree-indent-2">
+                            <span class="tree-icon">📍</span>
+                            <span>detected_tissue_image.jpg</span>
+                        </div>
+                        <div class="tree-item tree-file tree-indent-2">
+                            <span class="tree-icon">⚙️</span>
+                            <span>scalefactors_json.json</span>
+                        </div>
+                        <div class="tree-item tree-file tree-indent-2">
+                            <span class="tree-icon">📋</span>
+                            <span>tissue_positions_list.csv</span>
+                            <span class="tree-badge">4,992 rows</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dataset-info-cards">
+                    <div class="info-card">
+                        <div class="info-icon">📊</div>
+                        <h4>Gene Expression Matrix</h4>
+                        <p>Sparse HDF5 matrix: ~3,800 spots × ~36,000 genes. Each value = UMI count (RNA molecules captured at that spot for that gene).</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🔬</div>
+                        <h4>H&E Tissue Images</h4>
+                        <p>Microscopy photos of the stained tissue. Pink streaks = collagen (eosin). Purple dots = cell nuclei (hematoxylin). Used for validation.</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">📍</div>
+                        <h4>Spatial Coordinates</h4>
+                        <p>Each barcode maps to (x, y) pixel coordinates on the tissue image. <code>scalefactors_json.json</code> converts between resolution levels.</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🎯</div>
+                        <h4>Scale Factors</h4>
+                        <p>Spot diameter: ~177px (55μm). Hires scale: 8.25%. Lowres scale: 2.48%. Fiducial diameter: ~287px (for alignment).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== ARCHITECTURE ==================== -->
+    <section class="section section-dark" id="architecture">
+        <div class="container">
+            <div class="section-header animate-in">
+                <span class="section-tag">Engineering</span>
+                <h2 class="section-title">Code <span class="gradient-text">Architecture</span></h2>
+                <p class="section-desc">A modular Python package with 10 specialized modules.</p>
+            </div>
+
+            <div class="modules-grid animate-in">
+                <div class="module-card active-module">
+                    <div class="module-status">✅ Active</div>
+                    <h4>config.py</h4>
+                    <p>Hyperparameters, gene signatures, thresholds</p>
+                </div>
+                <div class="module-card active-module">
+                    <div class="module-status">✅ Active</div>
+                    <h4>data_loader.py</h4>
+                    <p>Load 10x Visium data into AnnData</p>
+                </div>
+                <div class="module-card active-module">
+                    <div class="module-status">✅ Active</div>
+                    <h4>preprocessor.py</h4>
+                    <p>QC, normalization, PCA, clustering</p>
+                </div>
+                <div class="module-card active-module">
+                    <div class="module-status">✅ Active</div>
+                    <h4>mechanotyper.py</h4>
+                    <p>Resistance field + drug simulation</p>
+                </div>
+                <div class="module-card active-module">
+                    <div class="module-status">✅ Active</div>
+                    <h4>visualizer.py</h4>
+                    <p>Plotting & visualization utilities</p>
+                </div>
+                <div class="module-card inactive-module">
+                    <div class="module-status">⏳ Ready</div>
+                    <h4>graph_builder.py</h4>
+                    <p>Spatial graph construction</p>
+                </div>
+                <div class="module-card inactive-module">
+                    <div class="module-status">⏳ Ready</div>
+                    <h4>velocity_corrector.py</h4>
+                    <p>Physics-constrained velocity</p>
+                </div>
+                <div class="module-card inactive-module">
+                    <div class="module-status">⏳ Ready</div>
+                    <h4>clinical_scorer.py</h4>
+                    <p>MTS & risk classification</p>
+                </div>
+                <div class="module-card inactive-module">
+                    <div class="module-status">⏳ Ready</div>
+                    <h4>database.py</h4>
+                    <p>SQLite output storage</p>
+                </div>
+                <div class="module-card active-module">
+                    <div class="module-status">✅ Active</div>
+                    <h4>__init__.py</h4>
+                    <p>Package exports</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== TECH STACK ==================== -->
+    <section class="section" id="techstack">
+        <div class="container">
+            <div class="section-header animate-in">
+                <span class="section-tag">Foundation</span>
+                <h2 class="section-title">Tech <span class="gradient-text">Stack</span></h2>
+            </div>
+
+            <div class="tech-grid animate-in">
+                <div class="tech-card">
+                    <div class="tech-icon">🔬</div>
+                    <h4>Scanpy</h4>
+                    <p>Core single-cell analysis framework</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🚀</div>
+                    <h4>scVelo</h4>
+                    <p>RNA velocity computation</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🔢</div>
+                    <h4>NumPy / SciPy</h4>
+                    <p>Numerical computation, sparse matrices</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">📊</div>
+                    <h4>Matplotlib</h4>
+                    <p>Scientific visualization</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🐼</div>
+                    <h4>Pandas</h4>
+                    <p>Data manipulation</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🔥</div>
+                    <h4>PyTorch + PyG</h4>
+                    <p>GNN (future stages)</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🧠</div>
+                    <h4>scikit-learn</h4>
+                    <p>KNN smoothing, scaling</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🐍</div>
+                    <h4>Python 3.9+</h4>
+                    <p>Core language</p>
+                </div>
+            </div>
+
+            <!-- What's Next -->
+            <div class="whats-next animate-in">
+                <h3>🔮 What's Next</h3>
+                <div class="next-items">
+                    <div class="next-item">
+                        <span class="next-num">03</span>
+                        <div>
+                            <h4>Graph Simulation</h4>
+                            <p>Build spatial graph with resistance-weighted edges. Apply physics corrections to velocity vectors. Cells in walls → velocity reduced to near-zero.</p>
+                        </div>
+                    </div>
+                    <div class="next-item">
+                        <span class="next-num">04</span>
+                        <div>
+                            <h4>Clinical Scoring & Validation</h4>
+                            <p>Compute Mechano-Therapeutic Score (MTS). Classify tumors as Hot/Cold. Generate clinical reports with treatment recommendations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="nav-icon">🧬</span>
+                    <span>Mechano-Velocity</span>
+                </div>
+                <p class="footer-text">Physics-Informed Cell Migration Prediction</p>
+                <p class="footer-copy">TARP Research Project · February 2026</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
