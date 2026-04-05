@@ -34,5 +34,9 @@ scikit-learn>=1.0.0
 # Database
 # sqlite3 is built into Python
 
+# Web Server
+flask>=2.3.0
+flask-cors>=4.0.0
+
 # Utilities
 tqdm>=4.62.0
