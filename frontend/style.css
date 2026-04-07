@@ -784,6 +784,19 @@ select.input {
     padding: 40px 20px;
 }
 
+/* --- GNN Plots Row --- */
+.gnn-plots-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.gnn-plots-row .plot-card {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 300px;
+}
+
 /* --- Responsive --- */
 @media (max-width: 768px) {
     .cards-row, .stages-grid, .plots-grid { grid-template-columns: 1fr; }

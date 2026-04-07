@@ -203,8 +203,19 @@
 
             <!-- Validation Results -->
             <div class="card" id="card-validation" style="display: none;">
-                <h3>✅ Scientific Validation</h3>
+                <h3>✅ Scientific Validation (Graph-Diffusion)</h3>
                 <div class="validation-grid" id="validation-grid"></div>
+            </div>
+
+            <!-- GNN Model Results -->
+            <div class="card" id="card-gnn" style="display: none;">
+                <div class="report-header">
+                    <h3>🧠 GNN Model Results</h3>
+                    <span class="report-badge" id="gnn-badge" style="display:none;"></span>
+                </div>
+                <p class="view-subtitle" style="margin-bottom:1rem;">Physics-informed Graph Neural Network velocity correction — compared against the graph-diffusion baseline.</p>
+                <div class="validation-grid" id="gnn-validation-grid"></div>
+                <div class="gnn-plots-row" id="gnn-plots-row" style="display:none;"></div>
             </div>
 
             <!-- Plot Category Tabs -->
@@ -214,6 +225,7 @@
                 <button class="plot-tab" data-category="mechanotyping">Mechanotyping</button>
                 <button class="plot-tab" data-category="velocity">Velocity</button>
                 <button class="plot-tab" data-category="clinical">Clinical</button>
+                <button class="plot-tab" data-category="gnn">GNN</button>
             </div>
 
             <!-- Plots Grid -->

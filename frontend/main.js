@@ -37,6 +37,9 @@ const PLOT_META = {
     'validation_wall_vs_fluid':   { title: 'Wall vs Fluid Velocity',       category: 'clinical' },
     'ablation_study':             { title: 'Ablation Study',               category: 'clinical', wide: true },
     'validation_overlay':         { title: 'Validation Overlay',           category: 'clinical' },
+    // GNN
+    'gnn_comparison':             { title: 'GNN vs Graph-Diffusion',       category: 'gnn', wide: true },
+    'gnn_training_curves':        { title: 'GNN Training Curves',          category: 'gnn', wide: true },
 };
 
 // ============================================================
@@ -384,6 +387,20 @@ async function loadResults() {
             renderPlots(data.plots, 'all');
             setupPlotTabs();
         }
+
+        // Load GNN results (if available)
+        try {
+            const gnn = await API.get('/gnn/results');
+            if (gnn && gnn.results) {
+                renderGNNResults(gnn.results, gnn.plots || {});
+                // Merge GNN plots into allPlots so they show in tabs
+                if (gnn.plots) {
+                    Object.assign(state.allPlots, gnn.plots);
+                }
+            }
+        } catch (_) {
+            // GNN not trained yet, that's OK
+        }
     } catch (err) {
         console.error('Error loading results:', err);
     }
@@ -491,6 +508,73 @@ function renderValidation(validation) {
     }
     
     grid.innerHTML = html;
+}
+
+// ============================================================
+// GNN Results Rendering
+// ============================================================
+function renderGNNResults(results, plots) {
+    const card = document.getElementById('card-gnn');
+    card.style.display = 'block';
+    const grid = document.getElementById('gnn-validation-grid');
+
+    const gR = results.gnn_resistance_correlation || {};
+    const dR = results.graph_resistance_correlation || {};
+    const wf = results.wall_vs_fluid_ttest || {};
+    const wv = results.gnn_wall_velocity;
+    const fv = results.gnn_fluid_velocity;
+    const mse = results.gnn_vs_graph_mse;
+    const params = results.model_params;
+    const epochs = results.epochs_trained;
+    const valLoss = results.best_val_loss;
+
+    const wallPass = wv != null && fv != null && wv < fv && wf.p < 0.05;
+
+    // Badge
+    const badge = document.getElementById('gnn-badge');
+    badge.style.display = 'inline-block';
+    badge.className = 'report-badge ' + (wallPass ? 'hot' : 'cold');
+    badge.textContent = wallPass ? '✅ Validated' : '⚠️ Check';
+
+    grid.innerHTML = `
+        <div class="validation-card pass">
+            <h4>🧠 Model Info</h4>
+            <div class="val-stat">Architecture: <strong>3-layer GCN + Residual + MLP</strong></div>
+            <div class="val-stat">Parameters: <strong>${params ? params.toLocaleString() : '—'}</strong></div>
+            <div class="val-stat">Epochs trained: <strong>${epochs || '—'}</strong></div>
+            <div class="val-stat">Best val loss: <strong>${valLoss != null ? valLoss.toFixed(6) : '—'}</strong></div>
+        </div>
+        <div class="validation-card ${gR.p < 0.05 ? 'pass' : 'fail'}">
+            <h4>📊 Resistance-Velocity Correlation</h4>
+            <div class="val-stat">GNN: r = <strong>${gR.r?.toFixed(4) || '—'}</strong>, p = <strong>${gR.p?.toExponential(2) || '—'}</strong></div>
+            <div class="val-stat">Baseline: r = <strong>${dR.r?.toFixed(4) || '—'}</strong>, p = <strong>${dR.p?.toExponential(2) || '—'}</strong></div>
+            <div class="val-result ${gR.p < 0.05 ? 'pass' : 'fail'}">${gR.p < 0.05 ? '✅ PASS' : '❌ NOT SIGNIFICANT'}</div>
+        </div>
+        <div class="validation-card ${wallPass ? 'pass' : 'fail'}">
+            <h4>📊 Wall vs Fluid Velocity (GNN)</h4>
+            <div class="val-stat">Wall mean: <strong>${wv?.toFixed(4) || '—'}</strong></div>
+            <div class="val-stat">Fluid mean: <strong>${fv?.toFixed(4) || '—'}</strong></div>
+            <div class="val-stat">t = <strong>${wf.t?.toFixed(4) || '—'}</strong>, p = <strong>${wf.p?.toExponential(2) || '—'}</strong></div>
+            <div class="val-result ${wallPass ? 'pass' : 'fail'}">${wallPass ? '✅ PASS' : '❌ FAIL'}</div>
+        </div>
+        <div class="validation-card pass">
+            <h4>📊 GNN vs Graph-Diffusion Agreement</h4>
+            <div class="val-stat">MSE: <strong>${mse?.toFixed(6) || '—'}</strong></div>
+            <div class="val-stat">Lower = better agreement between GNN and baseline</div>
+        </div>
+    `;
+
+    // GNN comparison plots
+    if (Object.keys(plots).length > 0) {
+        const row = document.getElementById('gnn-plots-row');
+        row.style.display = 'flex';
+        row.innerHTML = Object.entries(plots).map(([key, url]) => `
+            <div class="plot-card wide">
+                <img src="${url}" alt="${key}" loading="lazy" />
+                <div class="plot-title">${PLOT_META[key]?.title || key}</div>
+            </div>
+        `).join('');
+    }
 }
 
 function setupPlotTabs() {

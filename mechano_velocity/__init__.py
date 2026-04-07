@@ -6,7 +6,7 @@ by detecting physical barriers (ECM/collagen) and applying resistance penalties
 to RNA velocity vectors.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Mechano-Velocity Team"
 
 from .config import Config
@@ -19,6 +19,19 @@ from .clinical_scorer import ClinicalScorer
 from .visualizer import Visualizer
 from .database import DatabaseManager
 
+# GNN components (optional — requires torch-geometric)
+try:
+    from .gnn_model import (
+        MechanoVelocityGNN,
+        PhysicsLoss,
+        prepare_gnn_data,
+        load_trained_model,
+        predict_velocity,
+    )
+    HAS_GNN = True
+except ImportError:
+    HAS_GNN = False
+
 __all__ = [
     "Config",
     "DataLoader", 
@@ -30,3 +43,4 @@ __all__ = [
     "Visualizer",
     "DatabaseManager",
 ]
+

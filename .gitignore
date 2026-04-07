@@ -1,5 +1,55 @@
+# ================================================
+# Mechano-Velocity .gitignore
+# ================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# --- Virtual Environment ---
+.venv/
+venv/
+env/
+
+# --- Data (large binary files — download separately) ---
+data/
+*.h5
+*.h5ad
+
+# --- Model Weights & Checkpoints (too large for git) ---
+models/
+*.pt
+*.pth
+*.onnx
+
+# --- Pipeline Output (generated, not source) ---
+output/
+*.db
+
+# --- Jupyter Notebook with outputs (69MB+) ---
 mechano_velocity.ipynb
-/output
-/mechano_velocity.egg-info
-frontend/node_modules
-__pycache__
+.ipynb_checkpoints/
+
+# --- Frontend ---
+frontend/node_modules/
+frontend/dist/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- GNN training data (exported .npz) ---
+*.npz

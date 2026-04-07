@@ -369,12 +369,65 @@ def api_set_config():
 
 
 # ----------------------------------------------------------------
+# API: GNN Model Status & Results
+# ----------------------------------------------------------------
+@app.route('/api/gnn/status')
+def api_gnn_status():
+    """Check if GNN weights and results are available."""
+    models_dir = get_models_dir()
+    output_dir = get_output_dir()
+    
+    weights_path = models_dir / 'gnn_weights.pt'
+    results_path = output_dir / 'gnn_validation_results.json'
+    
+    return jsonify({
+        'weights_available': weights_path.exists(),
+        'results_available': results_path.exists(),
+        'weights_path': str(weights_path),
+    })
+
+
+@app.route('/api/gnn/results')
+def api_gnn_results():
+    """Return GNN validation results if available."""
+    output_dir = get_output_dir()
+    results_path = output_dir / 'gnn_validation_results.json'
+    
+    if not results_path.exists():
+        return jsonify({'error': 'GNN results not found. Train the model first.'}), 404
+    
+    with open(results_path) as f:
+        results = json.load(f)
+    
+    # Check for GNN comparison plots
+    gnn_plots = {}
+    for name in ['gnn_comparison', 'gnn_training_curves']:
+        p = output_dir / f'{name}.png'
+        if p.exists():
+            gnn_plots[name] = f'/api/plots/{name}'
+    
+    return jsonify({
+        'results': results,
+        'plots': gnn_plots,
+    })
+
+
+# ----------------------------------------------------------------
 # Entry Point
 # ----------------------------------------------------------------
 if __name__ == '__main__':
     print("=" * 60)
-    print("  MECHANO-VELOCITY API SERVER")
+    print("  MECHANO-VELOCITY API SERVER v0.2")
     print("  http://localhost:5000")
+    print("=" * 60)
+    
+    # Check GNN availability
+    gnn_weights = runner.config.models_dir / 'gnn_weights.pt'
+    if gnn_weights.exists():
+        print(f"  GNN weights: ✅ {gnn_weights}")
+    else:
+        print(f"  GNN weights: ❌ Not found (graph-diffusion mode)")
+    
     print("=" * 60)
     
     # Ensure directories exist
@@ -383,3 +436,4 @@ if __name__ == '__main__':
     runner.config.data_dir.mkdir(parents=True, exist_ok=True)
     
     app.run(host='0.0.0.0', port=5000, debug=False)
+
