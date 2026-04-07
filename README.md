@@ -34,7 +34,7 @@ Both modes independently validate the core hypothesis, providing strong evidence
 
 ## Problem Statement
 
-### What scVelo / spVelo do wrong
+### What scVelo / spVelo do
 
 These tools infer cell velocity from RNA splicing dynamics or spatial relationships. If a cell expresses migration-associated genes, the model predicts it is moving — regardless of the physical environment. A cancer cell embedded in a dense collagen wall? scVelo says it's migrating. spVelo smooths the trajectory spatially but still predicts movement across mechanical barriers.
 
